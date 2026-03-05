@@ -22,6 +22,13 @@ static double getSensitivity() {
     return speed;
 }
 
+static bool enableInEditor() {
+    static bool enable = (listenForSettingChanges<bool>("scroll-enable-in-editor", [](bool value) {
+        enable = value;
+    }), Mod::get()->getSettingValue<bool>("scroll-enable-in-editor"));
+    return enable;
+}
+
 // for some specific mod compatibility reasons
 static bool shouldPassthrough() {
     static auto volumeControls = Loader::get()->getLoadedMod("hjfod.quick-volume-controls") != nullptr;
@@ -62,6 +69,14 @@ class $modify(ScrolledCCMouseDispatcher, CCMouseDispatcher) {
             this->stopSchedule();
         }
 
+        if (LevelEditorLayer::get()) {
+            // check if ctrl is pressed, since zooming will be messed up
+            if (!enableInEditor() || CCKeyboardDispatcher::get()->getControlKeyPressed()) {
+                this->stopSchedule();
+                return;
+            }
+        }
+
         s_emulateScroll = true;
         this->dispatchScrollMSG(lerpedY, lerpedX);
         s_emulateScroll = false;
@@ -81,6 +96,8 @@ class $modify(ScrolledCCMouseDispatcher, CCMouseDispatcher) {
     void stopSchedule() {
         if (!s_isScrolling) return;
         s_isScrolling = false;
+        s_bufferedScrollY = 0;
+        s_bufferedScrollX = 0;
         CCScheduler::get()->unscheduleSelector(
             schedule_selector(ScrolledCCMouseDispatcher::updateScroll),
             this
@@ -89,13 +106,21 @@ class $modify(ScrolledCCMouseDispatcher, CCMouseDispatcher) {
 
     bool dispatchScrollMSG(float y, float x) {
         // bypass the scroll if we're emulating it, or there are no listeners
-        if (s_emulateScroll || shouldPassthrough() || m_pMouseHandlers->count() == 0) {
+        if (s_emulateScroll) {
             return CCMouseDispatcher::dispatchScrollMSG(y, x);
         }
 
-        // don't smooth the scroll if we're in the level editor for now (zooming is a bit weird)
-        if (LevelEditorLayer::get()) {
+        if (shouldPassthrough() || m_pMouseHandlers->count() == 0) {
+            this->stopSchedule();
             return CCMouseDispatcher::dispatchScrollMSG(y, x);
+        }
+
+        if (LevelEditorLayer::get()) {
+            // check if ctrl is pressed, since zooming will be messed up
+            if (!enableInEditor() || CCKeyboardDispatcher::get()->getControlKeyPressed()) {
+                this->stopSchedule();
+                return CCMouseDispatcher::dispatchScrollMSG(y, x);
+            }
         }
 
         // buffer the scroll amount

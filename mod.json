@@ -37,6 +37,12 @@
 			"control": {
 				"slider": true
 			}
+		},
+		"scroll-enable-in-editor": {
+			"name": "Enable in Editor",
+			"description": "Whether to enable smooth scroll in the level editor",
+			"type": "bool",
+			"default": true
 		}
 	}
 }
