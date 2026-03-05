@@ -1,3 +1,6 @@
+## v1.1.1
+- Re-added Intel macOS support, which was accidentally removed in v1.1.0
+
 ## v1.1.0
 - Port to Geode v5 / Geometry Dash 2.2081
 - Added bugfix for horizontal scrolling on Windows
