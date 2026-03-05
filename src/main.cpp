@@ -8,22 +8,22 @@ static double s_bufferedScrollX = 0;
 static bool s_isScrolling = false;
 static bool s_emulateScroll = false;
 
-double getSpeed() {
-    static double speed = (listenForSettingChanges("scroll-speed", [](double value) {
+static double getSpeed() {
+    static double speed = (listenForSettingChanges<double>("scroll-speed", [](double value) {
         speed = value;
     }), Mod::get()->getSettingValue<double>("scroll-speed"));
     return speed;
 }
 
-double getSensitivity() {
-    static double speed = (listenForSettingChanges("scroll-sensitivity", [](double value) {
+static double getSensitivity() {
+    static double speed = (listenForSettingChanges<double>("scroll-sensitivity", [](double value) {
         speed = value;
     }), Mod::get()->getSettingValue<double>("scroll-sensitivity"));
     return speed;
 }
 
 // for some specific mod compatibility reasons
-bool shouldPassthrough() {
+static bool shouldPassthrough() {
     static auto volumeControls = Loader::get()->getLoadedMod("hjfod.quick-volume-controls") != nullptr;
     if (volumeControls) {
         return CCKeyboardDispatcher::get()->getAltKeyPressed();
@@ -88,8 +88,8 @@ class $modify(ScrolledCCMouseDispatcher, CCMouseDispatcher) {
     }
 
     bool dispatchScrollMSG(float y, float x) {
-        // bypass the scroll if we're emulating it (or if it's horizontal for some reason)
-        if (s_emulateScroll || shouldPassthrough()) {
+        // bypass the scroll if we're emulating it, or there are no listeners
+        if (s_emulateScroll || shouldPassthrough() || m_pMouseHandlers->count() == 0) {
             return CCMouseDispatcher::dispatchScrollMSG(y, x);
         }
 
@@ -105,3 +105,22 @@ class $modify(ScrolledCCMouseDispatcher, CCMouseDispatcher) {
         return false;
     }
 };
+
+// a windows specific fix to enable horizontal scrolling, and also have proper fractional speed
+#ifdef GEODE_IS_WINDOWS
+#include <Geode/modify/CCEGLView.hpp>
+
+class $modify(ScrolledCCEGLView, CCEGLView) {
+    static void onModify(auto& self) {
+        (void) self.setHookPriority("GLFWscrollfun", Priority::Replace);
+    }
+
+    void onGLFWMouseScrollCallback(GLFWwindow* window, double x, double y) {
+        constexpr double SPEED = 12;
+        CCDirector::get()->getMouseDispatcher()->dispatchScrollMSG(
+            static_cast<float>(y * -SPEED),
+            static_cast<float>(x * SPEED)
+        );
+    }
+};
+#endif
