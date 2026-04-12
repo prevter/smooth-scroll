@@ -1,3 +1,6 @@
+## v1.1.2
+- Fixed minor mod incompatibility issue
+
 ## v1.1.1
 - Re-added Intel macOS support, which was accidentally removed in v1.1.0
 

@@ -8,7 +8,7 @@ else()
     set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64")
 endif()
 
-project(smooth-scroll VERSION 1.1.0)
+project(smooth-scroll VERSION 1.1.2)
 
 add_library(${PROJECT_NAME} SHARED src/main.cpp)
 
