@@ -137,7 +137,7 @@ class $modify(ScrolledCCMouseDispatcher, CCMouseDispatcher) {
 
 class $modify(ScrolledCCEGLView, CCEGLView) {
     static void onModify(auto& self) {
-        (void) self.setHookPriority("GLFWscrollfun", Priority::Replace);
+        (void) self.setHookPriority("cocos2d::CCEGLView::onGLFWMouseScrollCallback", Priority::Replace);
     }
 
     void onGLFWMouseScrollCallback(GLFWwindow* window, double x, double y) {
